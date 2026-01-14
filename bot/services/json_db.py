@@ -115,6 +115,19 @@ class JsonDB:
             if int(r["round_id"]) == round_id:
                 return r
         return None
+    
+    async def get_round_solutions(self, round_id: int, owner_user_id: int) -> dict:
+        rows = await self._read(self.s.db_solutions_path)
+        first = None
+        constrained = None
+        for r in rows:
+            if int(r["round_id"]) == round_id and int(r["owner_user_id"]) == owner_user_id:
+                if r["stage"] == "first":
+                    first = r
+                elif r["stage"] == "constrained":
+                    constrained = r
+        return {"first": first, "constrained": constrained}
+
 
     async def get_user_active_round(self, user_id: int) -> Optional[Dict[str, Any]]:
         rows = await self._read(self.s.db_rounds_path)
