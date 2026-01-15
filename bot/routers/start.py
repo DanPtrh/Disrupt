@@ -12,6 +12,13 @@ router = Router()
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, role, db, **_):
     await state.clear()
-    await message.answer(WELCOME_TEXT, reply_markup=main_menu_kb(is_admin=role.is_admin))
+
+    img_url = "https://cyber.sports.ru/dota2/blogs/3232588.html"
+    await message.answer_photo(
+        photo=img_url,
+        caption=WELCOME_TEXT,
+        reply_markup=main_menu_kb(is_admin=role.is_admin),
+    )
+
     await message.answer("Введите ФИО капитана:")
     await state.set_state(GameStates.captain_name)

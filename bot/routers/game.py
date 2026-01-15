@@ -57,8 +57,8 @@ async def team_name(message: Message, state: FSMContext, db, **_):
 @router.message(GameStates.first_solution)
 async def first_solution(message: Message, state: FSMContext, db, **_):
     solution = (message.text or "").strip()
-    if len(solution) < 20:
-        await message.answer("Слишком коротко. Пришлите решение подробнее (минимум 20 символов).")
+    if len(solution) < 300:
+        await message.answer("Слишком коротко. Пришлите решение подробнее (минимум 300 символов).")
         return
 
     data = await state.get_data()
@@ -75,10 +75,10 @@ async def first_solution(message: Message, state: FSMContext, db, **_):
     )
 
     await message.answer(
-        "2. «Упссс….\n"
+        "Упссс….\n"
         "Как это бывает в реальной жизни, всегда появляются дополнительные условия, с которыми нам нужно тоже работать! "
         "От этого наш процесс станет только интереснее! Каждая команда выберет себе дополнительное условие, которое нужно учесть "
-        "при разработке своей механики.»"
+        "при разработке своей механики."
     )
 
     ogran = pick_ogran()
@@ -93,8 +93,8 @@ async def first_solution(message: Message, state: FSMContext, db, **_):
 @router.message(GameStates.constrained_solution)
 async def constrained_solution(message: Message, state: FSMContext, settings, db, **_):
     solution = (message.text or "").strip()
-    if len(solution) < 20:
-        await message.answer("Слишком коротко. Пришлите обновлённое решение подробнее (минимум 20 символов).")
+    if len(solution) < 300:
+        await message.answer("Слишком коротко. Пришлите обновлённое решение подробнее (минимум 300 символов).")
         return
 
     data = await state.get_data()
