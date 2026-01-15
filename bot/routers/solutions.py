@@ -22,8 +22,27 @@ def _find_stage(rows: list[dict], round_id: int, stage: str) -> dict | None:
 
 
 def _split_telegram(text: str, limit: int = 3900) -> list[str]:
-    # Telegram лимит ~4096, оставляем запас
     return [text[i:i + limit] for i in range(0, len(text), limit)]
+
+
+def _build_card(text_1: str, text_2: str, report: str, prefix: str = "") -> str:
+    text_1 = (text_1 or "").strip()
+    text_2 = (text_2 or "").strip()
+    report = (report or "").strip()
+
+    header = (prefix + "\n") if prefix else ""
+
+    return (
+        header
+        + "Этап 1 (без ограничения):\n"
+        + (text_1 if text_1 else "—")
+        + "\n\n"
+        + "Этап 2 (с ограничением):\n"
+        + (text_2 if text_2 else "—")
+        + "\n\n"
+        + "Общий отчёт гигачата:\n"
+        + (report if report else "—")
+    )
 
 
 @router.message(F.text == "Решения")
@@ -53,17 +72,11 @@ async def my_solutions(message: Message, db, **_):
     constrained = _find_stage(rows, rid, "constrained")
     final_eval = _find_stage(rows, rid, "final_eval")
 
-    text_1 = ((first or {}).get("text") or "").strip()
-    text_2 = ((constrained or {}).get("text") or "").strip()
-    report = ((final_eval or {}).get("gigachat_report") or "").strip()
-
-    msg = (
-        "Этап 1 (без ограничения):\n"
-        f"{text_1 if text_1 else '—'}\n\n"
-        "Этап 2 (с ограничением):\n"
-        f"{text_2 if text_2 else '—'}\n\n"
-        "Общий отчёт гигачата:\n"
-        f"{report if report else '—'}"
+    msg = _build_card(
+        text_1=(first or {}).get("text"),
+        text_2=(constrained or {}).get("text"),
+        report=(final_eval or {}).get("gigachat_report"),
+        prefix="",  # без user_id
     )
 
     for part in _split_telegram(msg):
@@ -78,11 +91,31 @@ async def all_solutions_staff(message: Message, db, **_):
         await message.answer("Пока нет решений.")
         return
 
-    # staff режим — последние 15 записей коротко (без гига-отчётов на 10 экранов)
-    for r in rows[-15:]:
-        preview = (r.get("text") or r.get("gigachat_report") or "").strip()
-        if len(preview) > 900:
-            preview = preview[:900] + "..."
-        await message.answer(
-            f"user_id={r['owner_user_id']} | stage={r['stage']}\n{preview}"
+    # 1) группируем по (owner_user_id, round_id)
+    groups: dict[tuple[int, int], list[dict]] = {}
+    for r in rows:
+        key = (int(r["owner_user_id"]), int(r["round_id"]))
+        groups.setdefault(key, []).append(r)
+
+    # 2) для стабильности сортируем группы: сначала по round_id, потом user_id
+    keys_sorted = sorted(groups.keys(), key=lambda x: (x[1], x[0]))
+
+    # 3) чтобы не спамить в чат — выводим последние 10 "карточек"
+    keys_sorted = keys_sorted[-10:]
+
+    for (uid, rid) in keys_sorted:
+        items = groups[(uid, rid)]
+
+        first = next((x for x in items if x.get("stage") == "first"), None)
+        constrained = next((x for x in items if x.get("stage") == "constrained"), None)
+        final_eval = next((x for x in items if x.get("stage") == "final_eval"), None)
+
+        msg = _build_card(
+            text_1=(first or {}).get("text"),
+            text_2=(constrained or {}).get("text"),
+            report=(final_eval or {}).get("gigachat_report"),
+            prefix=f"user_id={uid}",
         )
+
+        for part in _split_telegram(msg):
+            await message.answer(part)
