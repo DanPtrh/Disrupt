@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from bot.decorators.access import admin_only
 from bot.keyboards.admin import admin_panel_kb
 from bot.keyboards.common import main_menu_kb
+from aiogram.exceptions import TelegramForbiddenError
 
 router = Router()
 
@@ -100,12 +101,29 @@ async def admin_action_router(message: Message, state: FSMContext, role, db, **_
         return
 
     if action == "add_mod":
-        # username можно сохранить, если есть в сообщении
         username = raw.lstrip("@") if raw.startswith("@") else None
         await db.add_moderator(uid, username=username)
         await message.answer(f"Готово: user_id={uid} теперь модератор.")
+
+        # уведомление пользователю
+        try:
+            await message.bot.send_message(
+                chat_id=uid,
+                text="Вас назначили модератором. Теперь доступен просмотр всех решений."
+            )
+        except TelegramForbiddenError:
+            await message.answer(
+                "Модератор назначен, но уведомление не доставлено: пользователь не запускал бота (/start) или запретил сообщения."
+            )
     else:
         await db.remove_moderator(uid)
         await message.answer(f"Готово: user_id={uid} больше не модератор.")
 
-    await state.update_data(admin_action=None)
+        # опционально: уведомление о снятии
+        try:
+            await message.bot.send_message(
+                chat_id=uid,
+                text="У вас забрали права модератора."
+            )
+        except TelegramForbiddenError:
+            pass

@@ -78,17 +78,45 @@ class JsonDB:
 
 
     # ---------- users/teams ----------
-    async def upsert_user(self, user_id: int, captain_name: str) -> None:
+    async def get_user(self, user_id: int) -> Optional[Dict[str, Any]]:
         rows = await self._read(self.s.db_users_path)
-        found = False
         for r in rows:
             if int(r["user_id"]) == user_id:
-                r["captain_name"] = captain_name
-                found = True
-                break
-        if not found:
-            rows.append({"user_id": user_id, "captain_name": captain_name})
+                return r
+        return None
+
+
+    async def upsert_user(
+        self,
+        user_id: int,
+        captain_name: str | None = None,
+        username: str | None = None,
+        city: str | None = None,
+    ) -> None:
+        rows = await self._read(self.s.db_users_path)
+        for r in rows:
+            if int(r["user_id"]) == user_id:
+                if captain_name is not None:
+                    r["captain_name"] = captain_name
+                if username is not None:
+                    r["username"] = username
+                if city is not None:
+                    r["city"] = city
+                await self._write(self.s.db_users_path, rows)
+                return
+
+        # если пользователя нет — создаём
+        rows.append({
+            "user_id": user_id,
+            "captain_name": captain_name or "",
+            "username": username,
+            "city": city,
+        })
         await self._write(self.s.db_users_path, rows)
+
+
+    async def set_user_city(self, user_id: int, city: str) -> None:
+        await self.upsert_user(user_id=user_id, city=city)
 
     async def upsert_team(self, user_id: int, team_name: str) -> None:
         rows = await self._read(self.s.db_teams_path)

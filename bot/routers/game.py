@@ -25,7 +25,7 @@ async def captain_name(message: Message, state: FSMContext, db, **_):
         username=message.from_user.username,
     )
 
-    await message.answer("Введите город:")
+    await message.answer("Введите город (С большой буквы без пробелов. Пример: Санктпетербург, Нижнийновгород):")
     await state.set_state(GameStates.city)
 
 @router.message(GameStates.city)

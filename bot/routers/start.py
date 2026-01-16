@@ -33,3 +33,12 @@ async def cmd_start(message: Message, state: FSMContext, role, db, **_):
 
     await message.answer("Введите ФИО капитана:")
     await state.set_state(GameStates.captain_name)
+
+    
+@router.message(F.text.in_({"Отмена", "В меню"}))
+async def cancel_flow(message: Message, state: FSMContext, role, **_):
+    await state.clear()
+    await message.answer(
+        "Ок, вернулись в меню.",
+        reply_markup=main_menu_kb(is_admin=role.is_admin),
+    )
