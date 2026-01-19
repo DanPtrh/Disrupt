@@ -6,7 +6,7 @@ def admin_panel_kb() -> ReplyKeyboardMarkup:
             [KeyboardButton(text="Назначить модератора")],
             [KeyboardButton(text="Снять модератора")],
             [KeyboardButton(text="Список модераторов")],
-            [KeyboardButton(text="Назад")],
+            [KeyboardButton(text="Главное меню")],
         ],
         resize_keyboard=True,
     )

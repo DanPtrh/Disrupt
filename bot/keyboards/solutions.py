@@ -5,7 +5,7 @@ def solutions_kb(is_staff: bool) -> ReplyKeyboardMarkup:
     if is_staff:
         rows.append([KeyboardButton(text="Все решения (staff)")])
     rows.append([KeyboardButton(text="Мои решения")])
-    rows.append([KeyboardButton(text="Назад")])
+    rows.append([KeyboardButton(text="Главное меню")])
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 
@@ -15,8 +15,8 @@ def staff_solutions_kb() -> ReplyKeyboardMarkup:
             [KeyboardButton(text="Показать все решения")],
             [KeyboardButton(text="Последние 15 решений")],
             [KeyboardButton(text="Показать решения по городу")],
-            [KeyboardButton(text="Показать решения по @username")],
-            [KeyboardButton(text="Назад")],
+            [KeyboardButton(text="Показать решения по пользователю")],
+            [KeyboardButton(text="Главное меню")],
         ],
         resize_keyboard=True,
     )

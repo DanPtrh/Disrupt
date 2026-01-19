@@ -12,17 +12,9 @@ router = Router()
 # обновим username в профиле, если пользователь уже есть
 
 
-@router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext, role, db, **_):
-    await state.clear()
-
-    img_url = "https://cyber.sports.ru/dota2/blogs/3232588.html"
-    await message.answer_photo(
-        photo=img_url,
-        caption=WELCOME_TEXT,
-        reply_markup=main_menu_kb(is_admin=role.is_admin),
-    )
-
+async def show_main_menu(message: Message, role, db):
+    """Показывает главное меню с приветственным сообщением и картинкой"""
+    # Обновляем username в профиле, если пользователь уже есть
     user = await db.get_user(message.from_user.id)
     if user:
         await db.upsert_user(
@@ -31,14 +23,21 @@ async def cmd_start(message: Message, state: FSMContext, role, db, **_):
             username=message.from_user.username,
         )
 
-    await message.answer("Введите ФИО капитана:")
-    await state.set_state(GameStates.captain_name)
-
-    
-@router.message(F.text.in_({"Отмена", "В меню"}))
-async def cancel_flow(message: Message, state: FSMContext, role, **_):
-    await state.clear()
-    await message.answer(
-        "Ок, вернулись в меню.",
+    img_url = "https://cyber.sports.ru/dota2/blogs/3232588.html"
+    await message.answer_photo(
+        photo=img_url,
+        caption=WELCOME_TEXT,
         reply_markup=main_menu_kb(is_admin=role.is_admin),
     )
+
+
+@router.message(CommandStart())
+async def cmd_start(message: Message, state: FSMContext, role, db, **_):
+    await state.clear()
+    await show_main_menu(message, role, db)
+
+
+@router.message(F.text.in_({"Отмена", "В меню", "Главное меню"}))
+async def cancel_flow(message: Message, state: FSMContext, role, db, **_):
+    await state.clear()
+    await show_main_menu(message, role, db)

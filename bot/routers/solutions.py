@@ -10,6 +10,7 @@ from bot.keyboards.common import main_menu_kb
 from bot.keyboards.solutions import solutions_kb, staff_solutions_kb
 from bot.decorators.access import mod_or_admin
 from bot.states.staff import StaffSolutionsStates
+from bot.routers.start import show_main_menu
 
 router = Router()
 
@@ -76,6 +77,7 @@ async def _send_staff_cards(
     limit: int | None = 15,
     city: str | None = None,
     username: str | None = None,  # без "@"
+    user_id: int | None = None,
 ) -> None:
     rows = await db.list_all_solutions()
     if not rows:
@@ -109,6 +111,14 @@ async def _send_staff_cards(
             u = await db.get_user(uid) or {}
             u_uname = (u.get("username") or "").strip().lower()
             if u_uname == uname_norm:
+                filtered.append((uid, rid))
+        keys = filtered
+
+    # фильтр по user_id
+    if user_id is not None:
+        filtered: list[tuple[int, int]] = []
+        for (uid, rid) in keys:
+            if uid == user_id:
                 filtered.append((uid, rid))
         keys = filtered
 
@@ -161,11 +171,11 @@ async def solutions_menu(message: Message, role, state: FSMContext, **_):
     is_staff = role.is_admin or role.is_moderator
     await message.answer("Выберите режим просмотра:", reply_markup=solutions_kb(is_staff=is_staff))
 
-@router.message(F.text == "Назад")
-async def back(message: Message, role, state: FSMContext, **_):
+@router.message(F.text.in_({"Назад", "Главное меню"}))
+async def back(message: Message, role, state: FSMContext, db, **_):
     # чтобы staff-режим ожидания ввода не мешал
     await state.clear()
-    await message.answer("Главное меню.", reply_markup=main_menu_kb(is_admin=role.is_admin))
+    await show_main_menu(message, role, db)
 
 
 @router.message(F.text == "Мои решения")
@@ -195,8 +205,8 @@ async def my_solutions(message: Message, db, **_):
             text_1=(first or {}).get("text"),
             text_2=(constrained or {}).get("text"),
             report=(final_eval or {}).get("gigachat_report"),
-            prefix=f"round_id={rid}",
-            meta="",  # можно добавить город/ФИО, если хочешь
+            prefix="",
+            meta="",
         )
 
         msg_tg = render_report_md2(msg)
@@ -213,13 +223,13 @@ async def all_solutions_staff_menu(message: Message, state: FSMContext, **_):
     await message.answer("Выбери какие решения показать:", reply_markup=staff_solutions_kb())
 
 
-@router.message(F.text == "Все решения")
+@router.message(F.text == "Показать все решения")
 @mod_or_admin
 async def staff_all(message: Message, db, **_):
     await _send_staff_cards(message, db, limit=None)
 
 
-@router.message(F.text == "Показать последние 15 решений")
+@router.message(F.text == "Последние 15 решений")
 @mod_or_admin
 async def staff_last15(message: Message, db, **_):
     await _send_staff_cards(message, db, limit=15)
@@ -240,16 +250,25 @@ async def staff_city_do(message: Message, state: FSMContext, db, **_):
     await _send_staff_cards(message, db, limit=15, city=city)
 
 
-@router.message(F.text == "Показать решения по @username")
+@router.message(F.text == "Показать решения по пользователю")
 @mod_or_admin
-async def staff_username_ask(message: Message, state: FSMContext, **_):
-    await message.answer("Введи @username (например: @mrmax):")
-    await state.set_state(StaffSolutionsStates.wait_username)
+async def staff_user_ask(message: Message, state: FSMContext, **_):
+    await message.answer("Введи @username (например: @mrmax) или user_id (числом, например: 123456789):")
+    await state.set_state(StaffSolutionsStates.wait_user_id)
 
 
-@router.message(StaffSolutionsStates.wait_username)
+@router.message(StaffSolutionsStates.wait_user_id)
 @mod_or_admin
-async def staff_username_do(message: Message, state: FSMContext, db, **_):
-    uname = (message.text or "").strip().lstrip("@")
+async def staff_user_do(message: Message, state: FSMContext, db, **_):
+    raw_input = (message.text or "").strip()
     await state.clear()
-    await _send_staff_cards(message, db, limit=15, username=uname)
+
+    # Проверяем, что ввел пользователь: @username или user_id
+    if raw_input.startswith("@") or not raw_input.isdigit():
+        # Это @username
+        uname = raw_input.lstrip("@")
+        await _send_staff_cards(message, db, limit=15, username=uname)
+    else:
+        # Это user_id
+        uid = int(raw_input)
+        await _send_staff_cards(message, db, limit=15, user_id=uid)

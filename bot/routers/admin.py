@@ -6,6 +6,7 @@ from bot.decorators.access import admin_only
 from bot.keyboards.admin import admin_panel_kb
 from bot.keyboards.common import main_menu_kb
 from aiogram.exceptions import TelegramForbiddenError
+from bot.routers.start import show_main_menu
 
 router = Router()
 
@@ -55,10 +56,10 @@ async def list_mods(message: Message, db, **_):
     await message.answer("Модераторы:\n" + "\n".join(lines))
 
 
-@router.message(F.text == "Назад")
-async def back_from_admin(message: Message, role, **_):
-    if role.is_admin:
-        await message.answer("Главное меню.", reply_markup=main_menu_kb(is_admin=True))
+@router.message(F.text.in_({"Назад", "Главное меню"}))
+async def back_from_admin(message: Message, role, state: FSMContext, db, **_):
+    await state.clear()
+    await show_main_menu(message, role, db)
 
 @router.message()
 async def admin_action_router(message: Message, state: FSMContext, role, db, **_):
