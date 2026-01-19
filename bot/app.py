@@ -11,6 +11,7 @@ from bot.routers.start import router as start_router
 from bot.routers.game import router as game_router
 from bot.routers.solutions import router as solutions_router
 from bot.routers.admin import router as admin_router
+from bot.routers.profile import router as profile_router
 
 
 async def main():
@@ -27,6 +28,7 @@ async def main():
     dp.callback_query.middleware(RoleMiddleware(settings=settings))
 
     dp.include_router(start_router)
+    dp.include_router(profile_router)
     dp.include_router(game_router)
     dp.include_router(solutions_router)
     dp.include_router(admin_router)

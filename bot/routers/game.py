@@ -56,6 +56,12 @@ async def start_game(message: Message, state: FSMContext, db, role, **_):
 @router.message(GameStates.captain_name)
 async def captain_name(message: Message, state: FSMContext, db, **_):
     captain = (message.text or "").strip()
+
+    # Игнорируем системные кнопки
+    system_buttons = {"Главное меню", "В меню", "Отмена", "Начать игру", "Решения", "Админ панель", "Профиль"}
+    if captain in system_buttons:
+        return
+
     if len(captain) < 2:
         await message.answer("Имя слишком короткое. Введите имя капитана ещё раз:", reply_markup=game_kb())
         return
@@ -76,6 +82,12 @@ async def captain_name(message: Message, state: FSMContext, db, **_):
 @router.message(GameStates.city)
 async def city(message: Message, state: FSMContext, db, **_):
     city = (message.text or "").strip()
+
+    # Игнорируем системные кнопки
+    system_buttons = {"Главное меню", "В меню", "Отмена", "Начать игру", "Решения", "Админ панель", "Профиль"}
+    if city in system_buttons:
+        return
+
     if len(city) < 2:
         await message.answer("Город слишком короткий. Введите город ещё раз:", reply_markup=game_kb())
         return
@@ -89,6 +101,12 @@ async def city(message: Message, state: FSMContext, db, **_):
 @router.message(GameStates.team_name)
 async def team_name(message: Message, state: FSMContext, db, **_):
     team = (message.text or "").strip()
+
+    # Игнорируем системные кнопки
+    system_buttons = {"Главное меню", "В меню", "Отмена", "Начать игру", "Решения", "Админ панель", "Профиль"}
+    if team in system_buttons:
+        return
+
     if len(team) < 2:
         await message.answer("Название слишком короткое. Введите название команды ещё раз:", reply_markup=game_kb())
         return

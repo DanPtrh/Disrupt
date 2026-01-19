@@ -1,9 +1,9 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 def main_menu_kb(is_admin: bool) -> ReplyKeyboardMarkup:
     rows = [
         [KeyboardButton(text="Начать игру")],
-        [KeyboardButton(text="Решения")],
+        [KeyboardButton(text="Решения"), KeyboardButton(text="Профиль")],
     ]
     if is_admin:
         rows.append([KeyboardButton(text="Админ панель")])
