@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: disrupt-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Монтируем директорию с данными для сохранения между перезапусками
+      - ./bot/data:/app/bot/data
+    environment:
+      # Переменные окружения из .env файла
+      - BOT_TOKEN=${BOT_TOKEN}
+      - ADMINS=${ADMINS}
+      - GIGACHAT_CREDENTIALS=${GIGACHAT_CREDENTIALS}
+      - GIGACHAT_SCOPE=${GIGACHAT_SCOPE:-GIGACHAT_API_PERS}
+      - GIGACHAT_VERIFY_SSL=${GIGACHAT_VERIFY_SSL:-true}

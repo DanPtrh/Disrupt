@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: disrupt-bot-prod
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      # Монтируем директорию с данными для сохранения между перезапусками
+      - ./bot/data:/app/bot/data
+      # Логи
+      - ./logs:/app/logs
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - ADMINS=${ADMINS}
+      - GIGACHAT_CREDENTIALS=${GIGACHAT_CREDENTIALS}
+      - GIGACHAT_SCOPE=${GIGACHAT_SCOPE:-GIGACHAT_API_PERS}
+      - GIGACHAT_VERIFY_SSL=${GIGACHAT_VERIFY_SSL:-true}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Ограничения ресурсов
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
